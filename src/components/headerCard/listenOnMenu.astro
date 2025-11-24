@@ -14,7 +14,7 @@ import EasyPodcastIcon from "../icons/easyPodcastIcon.astro";
 let hasListenOn = false 
 
 for (const key in listenOn) {
-  if (listenOn[key]){
+  if ((listenOn as any)[key]){
     hasListenOn = true;
     break;
   }

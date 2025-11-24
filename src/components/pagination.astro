@@ -1,7 +1,7 @@
 ---
 const { page } = Astro.props;
 
-function getPagination(current, last, size) {
+function getPagination(current: number, last: number, size: number) {
   let pagination = [current];
   const offset = Math.floor(size / 2);
   const leftOffset = last - current > offset ? offset : last - current;

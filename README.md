@@ -61,7 +61,7 @@ The fact that Astropod comes configured by default with Decap does not mean that
 
 ## Requirements. 
 
-- Node 16.16.0 or higher
+- Node 18.14.0 or higher
 ## Commands
 
 All commands are run from the root of the project, from a terminal:
@@ -75,6 +75,13 @@ All commands are run from the root of the project, from a terminal:
 
 > These commands are using [`pnpm`][pnpm], but you can choose to use `npm` or `yarn` instead if you prefer.
 
+
+## Migración a Astro v5
+
+- Proyecto actualizado a `astro@5.16.0` junto con las integraciones oficiales (`@astrojs/mdx`, `@astrojs/tailwind`, `@astrojs/rss`, `@astrojs/sitemap`) recomendadas en la [guía de migración](https://docs.astro.build/en/guides/upgrade-to/v3/).
+- El tipado global ahora depende exclusivamente de `astro/client` (`src/env.d.ts`) y del preset `astro/tsconfigs/strict` para asegurar compatibilidad futura.
+- No se utilizan APIs obsoletas como `<Markdown />`, `@astrojs/image` o `ViewTransitions` desde `astro:components`; las directivas `transition:*` siguen las reglas de Astro v5.
+- Para reconstruir y validar la instalación posterior a los cambios, ejecuta `npm install --legacy-peer-deps` (requerido por `astro-netlify-cms`) seguido de `npm run build`.
 
 ## Project Structure
 

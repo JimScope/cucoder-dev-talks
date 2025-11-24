@@ -11,11 +11,16 @@ import PauseIcon from "./icons/pauseIcon.astro";
 let cover_url = cover ? cover : astropodConfig.cover;
 const displayDate = dayjs(pubDate).format("ll");
 
-function formatTime(secs) {
-  if (isNaN(secs) || secs < 0) {
-    const segmentedTime = secs.split(":");
-    return segmentedTime[0] == "00" || segmentedTime[0] == "0" ? secs : null;
+function formatTime(secs: number | string) {
+  if (typeof secs === "string") {
+    if (isNaN(Number(secs)) || Number(secs) < 0) {
+      const segmentedTime = secs.split(":");
+      return segmentedTime[0] == "00" || segmentedTime[0] == "0" ? secs : null;
+    }
+    secs = Number(secs);
   }
+
+  if (secs < 0) return null;
 
   const hours = Math.floor(secs / 3600);
   const minutes = Math.floor((secs % 3600) / 60);
