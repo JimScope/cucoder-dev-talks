@@ -1,4 +1,5 @@
 import { z, defineCollection } from "astro:content";
+import { glob } from 'astro/loaders';
 
 const episodeSchema = z.object({
     title: z.string(),
@@ -15,7 +16,10 @@ const episodeSchema = z.object({
 
 export type episodeSchema = z.infer<typeof episodeSchema>;
 
-const episodeCollection = defineCollection({ schema: episodeSchema });
+const episodeCollection = defineCollection({
+    loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/episode" }),
+    schema: episodeSchema
+});
 
 export const collections = {
     'episode': episodeCollection,

@@ -15,7 +15,7 @@ import ExternalLinkIcon from "../icons/externalLinkIcon.astro";
 let hasSocial = false 
 
 for (const key in social) {
-  if (social[key]){
+  if ((social as any)[key]){
     hasSocial = true;
     break;
   }

@@ -1,18 +1,17 @@
 import { defineConfig } from "astro/config";
 import mdx from "@astrojs/mdx";
 import sitemap from "@astrojs/sitemap";
-import tailwind from "@astrojs/tailwind";
-import NetlifyCMS from "astro-netlify-cms";
+import tailwindcss from "@tailwindcss/vite";
 import dcapConfig from "./decap.config.mjs";
 import astropodConfig from "./.astropod/astropod.config.json";
 import robotsTxt from "astro-robots-txt";
 
-// https://astro.build/config
-import image from "@astrojs/image";
+import netlify from "@astrojs/netlify";
 
 // https://astro.build/config
 export default defineConfig({
   site: 'https://podcast.cucoders.dev',
+
   integrations: [
     robotsTxt({
       policy: [
@@ -25,14 +24,11 @@ export default defineConfig({
     }),
     mdx(),
     sitemap(),
-    tailwind(),
-    image({
-      serviceEntryPoint: "@astrojs/image/sharp",
-      cacheDir: "./.cache/image",
-      logLevel: "debug",
-    }),
-    NetlifyCMS({
-      config: dcapConfig(),
-    }),
   ],
+
+  vite: {
+    plugins: [tailwindcss()],
+  },
+
+  adapter: netlify(),
 });
