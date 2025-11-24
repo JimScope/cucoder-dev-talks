@@ -1,127 +1,57 @@
-import xml2js from "xml2js";
-import dayjs from "dayjs";
-import astropodConfig from "../../.astropod/astropod.config.json";
+import rss from "@astrojs/rss";
 import { getCollection } from "astro:content";
-let episode = await getCollection("episode");
-episode.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
-if (astropodConfig.feedSize) episode = episode.slice(0, astropodConfig.feedSize);
-
+import astropodConfig from "../../.astropod/astropod.config.json";
 import { marked } from "marked";
 
-const lastBuildDate = dayjs().format("ddd, DD MMM YYYY hh:mm:ss ZZ");
-const cover = isFullUrl(astropodConfig.cover) ? astropodConfig.cover : astropodConfig.link + astropodConfig.cover;
-
 export async function GET(context) {
-  let podcast = {
-    rss: {
-      $: {
-        version: "2.0",
-        "xmlns:itunes": "http://www.itunes.com/dtds/podcast-1.0.dtd",
-        "xmlns:podcast": "https://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md",
-        "xmlns:atom": "http://www.w3.org/2005/Atom",
-        "xmlns:content": "http://purl.org/rss/1.0/modules/content/",
-      },
-      channel: [
-        {
-          title: astropodConfig.name,
-          description: astropodConfig.description,
-          link: astropodConfig.link,
-          copyright: astropodConfig.copyright,
-          author: astropodConfig.author,
-          generator: ["Astropod"],
-          lastBuildDate: lastBuildDate,
-          language: astropodConfig.language,
-          "itunes:author": astropodConfig.author,
-          "itunes:image": { $: { href: cover } },
-          "itunes:summary": astropodConfig.description,
-          "itunes:type": "episodic",
-          "itunes:explicit": astropodConfig.explicit,
-          "itunes:owner": {
-            "itunes:name": astropodConfig.owner,
-            "itunes:email": astropodConfig.email,
-          },
-          image: {
-            link: astropodConfig.link,
-            title: astropodConfig.name,
-            url: cover,
-          },
-          "atom:link": [
-            {
-              $: {
-                href: `${astropodConfig.link}/rss.xml`,
-                rel: "self",
-                type: "application/rss+xml",
-              },
-            },
-            {
-              $: {
-                href: `https://pubsubhubbub.appspot.com/`,
-                rel: "hub",
-                type: "application/rss+xml",
-              },
-            },
-          ],
-        },
-      ],
-    },
-  };
+  let episodes = await getCollection("episode");
+  episodes.sort((a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf());
+  if (astropodConfig.feedSize) episodes = episodes.slice(0, astropodConfig.feedSize);
 
-  podcast.rss.channel[0].category = astropodConfig.category.map((category) => category);
-  podcast.rss.channel[0]["itunes:category"] = astropodConfig.category.map((category) => ({
-    $: {
-      text: category,
-    },
-  }));
-
-  // podcast.rss.channel[0]["itunes:category"] = {
-  //   $: {
-  //     text: astropodConfig.category,
-  //   },
-  // };
-
-  if (astropodConfig.fundingUrl) {
-    const fundingUrl = isFullUrl(astropodConfig.fundingUrl)
-      ? astropodConfig.fundingUrl
-      : astropodConfig.link + astropodConfig.fundingUrl;
-    podcast.rss.channel[0]["podcast:funding"] = {
-      $: { url: fundingUrl },
-      _: astropodConfig.fundingText,
-    };
-  }
-
-  const items = episode.map((episode) => {
-    let item = {
+  return rss({
+    title: astropodConfig.name,
+    description: astropodConfig.description,
+    site: context.site,
+    items: episodes.map((episode) => ({
       title: episode.data.title,
-      description: marked.parse(episode.body),
-      pubDate: dayjs(episode.data.pubDate).format("ddd, DD MMM YYYY hh:mm:ss ZZ"),
-      link: `${astropodConfig.link}/episode/${episode.slug}/`,
-      guid: `${astropodConfig.link}/episode/${episode.slug}/`,
-      "itunes:episode": episode.data.episode,
-      "itunes:season": episode.data.season,
-      "itunes:episodeType": episode.data.episodeType,
-      "itunes:explicit": episode.data.explicit === undefined ? astropodConfig.explicit : episode.data.explicit,
+      description: marked.parse(episode.body ? episode.body : ""),
+      pubDate: episode.data.pubDate,
+      link: `/episode/${episode.id}/`,
       enclosure: {
-        $: {
-          url: isFullUrl(episode.data.audioUrl) ? episode.data.audioUrl : astropodConfig.link + episode.data.audioUrl,
-          length: episode.data.size && episode.data.size * 1000000,
-          type: "audio/mpeg",
-        },
+        url: isFullUrl(episode.data.audioUrl) ? episode.data.audioUrl : astropodConfig.link + episode.data.audioUrl,
+        length: episode.data.size ? episode.data.size * 1000000 : 0,
+        type: "audio/mpeg",
       },
-      "itunes:duration": episode.data.duration,
-    };
-    const cover_url = episode.data.cover ? episode.data.cover : astropodConfig.cover;
-    item["itunes:image"] = {
-      $: { href: isFullUrl(cover_url) ? cover_url : astropodConfig.link + cover_url },
-    };
-    return item;
+      customData: `
+        <itunes:episode>${episode.data.episode ?? ""}</itunes:episode>
+        <itunes:season>${episode.data.season ?? ""}</itunes:season>
+        <itunes:episodeType>${episode.data.episodeType ?? ""}</itunes:episodeType>
+        <itunes:explicit>${episode.data.explicit === undefined ? astropodConfig.explicit : episode.data.explicit}</itunes:explicit>
+        <itunes:duration>${episode.data.duration}</itunes:duration>
+        <itunes:image href="${isFullUrl(episode.data.cover ? episode.data.cover : astropodConfig.cover) ? (episode.data.cover ? episode.data.cover : astropodConfig.cover) : astropodConfig.link + (episode.data.cover ? episode.data.cover : astropodConfig.cover)}" />
+      `,
+    })),
+    customData: `
+      <language>${astropodConfig.language}</language>
+      <itunes:author>${astropodConfig.author}</itunes:author>
+      <itunes:image href="${isFullUrl(astropodConfig.cover) ? astropodConfig.cover : astropodConfig.link + astropodConfig.cover}" />
+      <itunes:summary>${astropodConfig.description}</itunes:summary>
+      <itunes:type>episodic</itunes:type>
+      <itunes:explicit>${astropodConfig.explicit}</itunes:explicit>
+      <itunes:owner>
+        <itunes:name>${astropodConfig.owner}</itunes:name>
+        <itunes:email>${astropodConfig.email}</itunes:email>
+      </itunes:owner>
+      <itunes:category text="${astropodConfig.category[0]}" />
+      ${astropodConfig.fundingUrl ? `<podcast:funding url="${isFullUrl(astropodConfig.fundingUrl) ? astropodConfig.fundingUrl : astropodConfig.link + astropodConfig.fundingUrl}">${astropodConfig.fundingText}</podcast:funding>` : ""}
+    `,
+    xmlns: {
+      itunes: "http://www.itunes.com/dtds/podcast-1.0.dtd",
+      podcast: "https://github.com/Podcastindex-org/podcast-namespace/blob/main/docs/1.0.md",
+      atom: "http://www.w3.org/2005/Atom",
+      content: "http://purl.org/rss/1.0/modules/content/",
+    },
   });
-
-  podcast.rss.channel[0].item = items;
-
-  let builder = new xml2js.Builder({cdata: true});
-  let xml = builder.buildObject(podcast);
-
-  return new Response(JSON.stringify(xml))
 }
 
 function isFullUrl(urlString) {
